@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+"""An advanced Reducer, using Python iterators and generators."""
+
+from itertools import groupby
+from operator import itemgetter
+import sys
+
+# receive the output of a mapper, (key, [value, value, ...])
+def read_mapper_output(input, separator='\t'):
+    for line in input:
+        #  return each (key, [value, value, ...]) tuple, though there should only be one per line
+        yield line.rstrip().split(separator, 1)
+
+def main(separator='\t'):
+    # input comes from STDIN (standard input)
+    data = read_mapper_output(sys.stdin, separator=separator)
+
+    # groupby groups multiple word-count pairs by word
+    # and creates an iterator that returns consecutive keys and their group:
+    #   current_word - string containing a word (the key)
+    #   group - iterator yielding all ["&lt;current_word&gt;", "&lt;count&gt;"] items
+    total_unigram = 0
+    total_trigram = 0
+    total_bigram = 0
+    for current_word, group in groupby(data, itemgetter(0)):
+        print(current_word,group)
+        try:
+            if(len(current_word)==1):
+                unigram_count = sum(int(count) for current_word, count in group)
+                total_unigram+=1
+                print("%s%s%d" % (current_word, separator, unigram_count))
+            elif(len(current_word)==2):
+                bigram_count = sum(int(count) for current_word, count in group)
+                total_bigram+=1
+                print("%s%s%d" % (current_word, separator, bigram_count))
+            else:
+                trigram_count = sum(int(count) for current_word, count in group)
+                total_trigram+=1
+                print("%s%s%d" % (current_word, separator, trigram_count))                
+        except ValueError:
+            # count was not a number, so silently discard this item
+            pass
+
+if __name__ == "__main__":
+    main()
